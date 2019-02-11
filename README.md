@@ -1,5 +1,9 @@
 # PyGitHub
 
+## Jellyfish-specific Notes
+This is a fork of PyGithub v1.43.2 that uses `urllib3.util.Retry` to attempt to re-try 500, 502, and 504 errors from GitHub's API.
+
+
 [![PyPI](https://img.shields.io/pypi/v/PyGithub.svg)](https://pypi.python.org/pypi/PyGithub)
 [![Build Status](https://travis-ci.org/PyGithub/PyGithub.svg?branch=master)](https://travis-ci.org/PyGithub/PyGithub)
 [![readthedocs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://pygithub.readthedocs.io/en/latest/?badge=latest)

@@ -59,6 +59,8 @@ import mimetypes
 import os
 import re
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import sys
 import time
 import urllib
@@ -87,6 +89,29 @@ class RequestsResponse:
     def read(self):
         return self.text
 
+
+def get_session():
+    session = requests.Session()
+
+    retries = 3
+    backoff_factor = 0.3
+    status_forcelist = (500, 502, 504)
+
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
+    return session
+
+
 class HTTPSRequestsConnectionClass(object):
     # mimic the httplib connection object
     def __init__(self, host, port=None, strict=False, timeout=None, **kwargs):
@@ -95,7 +120,7 @@ class HTTPSRequestsConnectionClass(object):
         self.protocol = "https"
         self.timeout = timeout
         self.verify = kwargs.get("verify", True)
-        self.session = requests.Session()
+        self.session = get_session()
 
     def request(self, verb, url, input, headers):
         self.verb = verb
@@ -106,7 +131,9 @@ class HTTPSRequestsConnectionClass(object):
     def getresponse(self):
         verb = getattr(self.session, self.verb.lower())
         url = "%s://%s:%s%s" % (self.protocol, self.host, self.port, self.url)
-        r = verb(url, headers=self.headers, data=self.input, timeout=self.timeout, verify=self.verify, allow_redirects=False)
+        r = verb(url, headers=self.headers, data=self.input,
+                 timeout=self.timeout, verify=self.verify,
+                 allow_redirects=False)
         return RequestsResponse(r)
 
     def close(self):
@@ -121,7 +148,7 @@ class HTTPRequestsConnectionClass(object):
         self.protocol = "http"
         self.timeout = timeout
         self.verify = kwargs.get("verify", True)
-        self.session = requests.Session()
+        self.session = get_session()
 
     def request(self, verb, url, input, headers):
         self.verb = verb
@@ -132,7 +159,9 @@ class HTTPRequestsConnectionClass(object):
     def getresponse(self):
         verb = getattr(self.session, self.verb.lower())
         url = "%s://%s:%s%s" % (self.protocol, self.host, self.port, self.url)
-        r = verb(url, headers=self.headers, data=self.input, timeout=self.timeout, verify=self.verify, allow_redirects=False)
+        r = verb(url, headers=self.headers, data=self.input,
+                 timeout=self.timeout, verify=self.verify,
+                 allow_redirects=False)
         return RequestsResponse(r)
 
     def close(self):
