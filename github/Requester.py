@@ -114,14 +114,18 @@ def get_session():
 
 class HTTPSRequestsConnectionClass(object):
     # mimic the httplib connection object
-    def __init__(self, host, port=None, strict=False, timeout=None, **kwargs):
+    def __init__(self, host, port=None, strict=False, session=None, timeout=None, **kwargs):
         self.port = port if port else 443
         self.host = host
         self.protocol = "https"
         self.timeout = timeout
         self.verify = kwargs.get("verify", True)
-        self.session = get_session()
 
+        if session:
+            self.session = session
+        else:
+            self.session = get_session()
+            
     def request(self, verb, url, input, headers):
         self.verb = verb
         self.url = url
@@ -142,13 +146,17 @@ class HTTPSRequestsConnectionClass(object):
 
 class HTTPRequestsConnectionClass(object):
     # mimic the httplib connection object
-    def __init__(self, host, port=None, strict=False, timeout=None, **kwargs):
+    def __init__(self, host, port=None, strict=False, session=None, timeout=None, **kwargs):
         self.port = port if port else 80
         self.host = host
         self.protocol = "http"
         self.timeout = timeout
         self.verify = kwargs.get("verify", True)
-        self.session = get_session()
+
+        if session:
+            self.session = session
+        else:
+            self.session = get_session()
 
     def request(self, verb, url, input, headers):
         self.verb = verb
@@ -243,7 +251,7 @@ class Requester:
 
     #############################################################
 
-    def __init__(self, login_or_token, password, base_url, timeout, client_id, client_secret, user_agent, per_page, api_preview, verify):
+    def __init__(self, login_or_token, password, base_url, timeout, client_id, client_secret, user_agent, per_page, api_preview, verify, session=None):
         self._initializeDebugFeature()
 
         if password is not None:
@@ -258,6 +266,7 @@ class Requester:
         else:
             self.__authorizationHeader = None
 
+        self.__session = session
         self.__base_url = base_url
         o = urlparse.urlparse(base_url)
         self.__hostname = o.hostname
@@ -310,9 +319,9 @@ class Requester:
                (o.port and o.port != self.__port) or \
                (o.scheme != self.__scheme and not (o.scheme == "https" and self.__scheme == "http")):  # issue80
                 if o.scheme == 'http':
-                    cnx = self.__httpConnectionClass(o.hostname, o.port)
+                    cnx = self.__httpConnectionClass(o.hostname, o.port, session=self.__session)
                 elif o.scheme == 'https':
-                    cnx = self.__httpsConnectionClass(o.hostname, o.port)
+                    cnx = self.__httpsConnectionClass(o.hostname, o.port, session=self.__session)
         return cnx
 
     def __createException(self, status, headers, output):
