@@ -491,7 +491,7 @@ class Requester:
         if self.__persist and self.__connection is not None:
             return self.__connection
 
-        self.__connection = self.__connectionClass(self.__hostname, self.__port, **kwds)
+        self.__connection = self.__connectionClass(self.__hostname, self.__port, session=self.__session, **kwds)
 
         return self.__connection
 
